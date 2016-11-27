@@ -6,26 +6,29 @@ using System.Threading.Tasks;
 
 namespace CSharpCode.DesignPatterns.PipeFilter
 {
-    public interface IOperation<T>
+    //Source : https://ayende.com/blog/3082/pipes-and-filters-the-ienumerable-appraoch
+    // Other : https://eventuallyconsistent.net/tag/pipe-and-filters/
+
+    public interface IFilter<T>
     {
         IEnumerable<T> Execute(IEnumerable<T> input);
     }
     public class Pipeline<T>
     {
-        private readonly List<IOperation<T>> operations = new List<IOperation<T>>();
+        private readonly List<IFilter<T>> filters = new List<IFilter<T>>();
 
-        public Pipeline<T> Register(IOperation<T> operation)
+        public Pipeline<T> Pipe(IFilter<T> filter)
         {
-            operations.Add(operation);
+            filters.Add(filter);
             return this;
         }
 
         public void Execute()
         {
             IEnumerable<T> current = new List<T>();
-            foreach (IOperation<T> operation in operations)
+            foreach (IFilter<T> filter in filters)
             {
-                current = operation.Execute(current);
+                current = filter.Execute(current);
             }
             IEnumerator<T> enumerator = current.GetEnumerator();
             while (enumerator.MoveNext()) ;
@@ -38,24 +41,21 @@ namespace CSharpCode.DesignPatterns.PipeFilter
     {
         public void Call()
         {
-            var pipe = new BuildPipeline();
-            pipe.Execute();
+            var pipeline = new Pipeline<Process>();
+            pipeline.Pipe(new GetAllProcesses())
+                    .Pipe(new LimitByWorkingSetSize())
+                    .Pipe(new PrintProcessName());
+
+            pipeline.Execute();
         }
 
     }
+    
 
-    public class BuildPipeline : Pipeline<Process>
-    {
-        public BuildPipeline()
-        {
-            Register(new GetAllProcesses());
-            Register(new LimitByWorkingSetSize());
-            Register(new PrintProcessName());
-        }
-    }
-
+    //Concreate Implementations 
+    //===============================================================================
     //We have three stages in the pipeline, the first, get processes:
-    public class GetAllProcesses : IOperation<Process>
+    public class GetAllProcesses : IFilter<Process>
     {
         public IEnumerable<Process> Execute(IEnumerable<Process> input)
         {
@@ -64,7 +64,7 @@ namespace CSharpCode.DesignPatterns.PipeFilter
     }
 
     //The second, limit by working set size:
-    public class LimitByWorkingSetSize : IOperation<Process>
+    public class LimitByWorkingSetSize : IFilter<Process>
     {
         public IEnumerable<Process> Execute(IEnumerable<Process> input)
         {
@@ -78,7 +78,7 @@ namespace CSharpCode.DesignPatterns.PipeFilter
     }
 
     //The third, print process name:
-    public class PrintProcessName : IOperation<Process>
+    public class PrintProcessName : IFilter<Process>
     {
         public IEnumerable<Process> Execute(IEnumerable<Process> input)
         {
@@ -89,4 +89,6 @@ namespace CSharpCode.DesignPatterns.PipeFilter
             yield break;
         }
     }
+    //Concreate Implementations  END
+    //===============================================================================
 }
