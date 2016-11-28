@@ -37,9 +37,9 @@ namespace CSharpCode.DesignPatterns.PipeFilter
 
     //Usage  
     //=============================================
-    public class Main
+    public class Program
     {
-        public void Call()
+        public void Main()
         {
             var pipeline = new Pipeline<Process>();
             pipeline.Pipe(new GetAllProcesses())
